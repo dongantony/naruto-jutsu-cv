@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Naruto Hand Sign Detector</title>
+    <link rel="stylesheet" href="css/style.css">
+
+    <!-- MediaPipe -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/camera_utils/camera_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/hands/hands.js"></script>
+</head>
+<body>
+    <h1>Naruto Hand Sign Detector</h1>
+    
+    <div class="container">
+        <video id="webcam" autoplay playsinline></video>
+        <canvas id="output"></canvas>
+    </div>
+
+    <p id="status">No hand detected</p>
+    <script src="js/camera.js"></script>
+</body>
+</html>
