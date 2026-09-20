@@ -22,14 +22,7 @@ video, canvas {
     width: 800px;
     border: 3px solid orange;
     border-radius: 10px;
-}
-
-video {
-    transform: scaleX(-1);
-}
-
-canvas {
-    transform: scaleX(-1);
+    transform: scaleX(-1)
 }
 
 #status {

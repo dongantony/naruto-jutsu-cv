@@ -1,9 +1,28 @@
-const video = document.getElementById("webcam")
-const canvas = document.getElementById("output")
-const status = document.getElementById("status")
-const ctx = canvas.getContext("2d")
+import {
+    getHandSlots,
+    getVisibleHands
+} from "./tracking/handSlots.js"
 
-//
+import {
+    processHandResults
+} from "./tracking/handTracker.js"
+
+import {
+    drawHand,
+    drawTwoHandInfo
+} from "./ui/drawing.js"
+
+import {
+    getHandRelationship
+} from "./tracking/handRelationship.js"
+
+
+// MediaPipe and DOM
+const video = document.getElementById('webcam')
+const canvas = document.getElementById('output')
+const status = document.getElementById('status')
+const ctx = canvas.getContext('2d')
+
 const hands = new Hands({
     locateFile: (file) => {
         return `https://cdn.jsdelivr.net/npm/@mediapipe/hands/${file}`
@@ -13,69 +32,61 @@ const hands = new Hands({
 hands.setOptions({
     maxNumHands: 2,
     modelComplexity: 1,
-    minDetectionConfidence: 0.7,
-    minTrackingConfidence: 0.7
+    minDetectionConfidence: 0.60,
+    minTrackingConfidence: 0.60
 })
 
 hands.onResults(onResults)
 
 
-//
 function onResults(results) {
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
+    canvas.width = results.image.width;
+    canvas.height = results.image.height;
 
     ctx.clearRect(0, 0, canvas.width, canvas.height)
-
     ctx.drawImage(results.image, 0, 0, canvas.width, canvas.height)
 
-    if(results.multiHandLandmarks) {
-        status.innerHTML = ""
+    processHandResults(results)
 
-        for(let i = 0; i < results.multiHandLandmarks.length; i++) {
-            const landmarks = results.multiHandLandmarks[i]
-            const handedness = results.multiHandedness[i].label
+    const handSlots = getHandSlots()
 
-            status.innerText += handedness + " Hand "
+    let visibleHands = 0
 
-            drawConnectors(ctx, landmarks, HAND_CONNECTIONS, {
-                color: "#00FF00",
-                lineWidth: 4
-            })
+    for(let i = 0; i < handSlots.length; i++) {
+        const slot = handSlots[i]
 
-            drawLandmarks(ctx, landmarks, {
-                color: "#FF0000",
-                lineWidth: 2,
-                radius: 5
-            })
+        if(!slot.active || !slot.visible || !slot.landmarks) continue
 
-            console.clear()
-            console.log(handedness)
-            console.table(
-                landmarks.map((p, index) => ({
-                    id: index,
-                    x: p.x.toFixed(3),
-                    y: p.y.toFixed(3),
-                    z: p.z.toFixed(3)
-                }))
-            )
-        }
+        visibleHands++
+
+        drawHand(ctx, canvas, slot, i)
+    }
+
+    const {left, right} = getVisibleHands()
+    const relationship = getHandRelationship(left, right)
+
+    if(relationship.available) {
+        drawTwoHandInfo(ctx, relationship)
+    }
+
+    if(visibleHands === 0) {
+        status.innerText = "No hands detected."
     }
     else {
-        status.innerText = "No hands detected."
+        status.innerText = `${visibleHands} hand${visibleHands === 1 ? "" : "s"} detected`
     }
 }
 
 
-// 
+// Camera
+
 const camera = new Camera(video, {
-    onFrame: async() => {
-        await hands.send({
-            image: video
-        })
+    onFrame: async () => {
+        await hands.send({ image: video })
     },
-    width: 800,
-    height: 600
+
+    width: 1280,
+    height: 720
 })
 
 camera.start()
