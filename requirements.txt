@@ -1,0 +1,9 @@
+Flask
+flask-cors
+joblib
+numpy
+scipy
+scikit-learn
+pandas
+opencv-python
+mediapipe

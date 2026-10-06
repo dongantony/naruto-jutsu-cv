@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 
-DATASET_DIR = "dataset"
+DATASET_DIR = "../dataset"
 
 EXPECTED_FEATURES = 126
 EXPECTED_COLUMNS = EXPECTED_FEATURES + 1
@@ -57,7 +57,7 @@ def validate_file(filename):
 
     else:
         labels = df["label"].unique()
-        print("f[OK] Labels: {list(labels)}")
+        print(f"[OK] Labels: {list(labels)}")
     
     # Missing Values
 
@@ -118,6 +118,8 @@ def validate_file(filename):
 
     return valid
 
+
+# Main
 
 def main():
     if not os.path.exists(DATASET_DIR):

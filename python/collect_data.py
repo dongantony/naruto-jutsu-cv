@@ -13,13 +13,13 @@ from mediapipe.tasks.python import vision
 
 # Settings
 
-DATASET_DIR = "../dataset"
+DATASET_DIR = "../dataset-test"
 MODEL_PATH = "../hand_landmarker.task"
 
 CAMERA_WIDTH = 1280
 CAMERA_HEIGHT = 720
 
-CAPTURE_COOLDOWN = 0.25     # Time between automatic captures when holding [SPACE]
+CAPTURE_COOLDOWN = 0.10     # Time between automatic captures after pressing [SPACE] 
 
 MAX_HANDS = 2
 
@@ -509,6 +509,9 @@ def main():
     capture_count = 0
     last_capture_time = 0
     frame_timestamp_ms = 0
+
+    auto_capturing = False
+    samples_to_capture = 0
     
     while True:
         success, frame = camera.read()
@@ -548,25 +551,46 @@ def main():
         # Capture
 
         if key == ord(" "):
+            
+            if not auto_capturing:
+                auto_capturing = True
+                samples_to_capture = 200
+
+                print()
+                print(f"[AUTO CAPTURE] Collecting 200 samples for {label}")
+                print()
+        
+        if auto_capturing:
             current_time = time.time()
 
             if current_time - last_capture_time >= CAPTURE_COOLDOWN:
-                if result.hand_landmarks:
 
+                if result.hand_landmarks:
                     features = extract_features(result)
                     save_sample(label, features)
-                    capture_count += 1
+
+                    capture_count += 1 
+                    samples_to_capture -= 1
+
                     last_capture_time = current_time
 
                     print(
                         f"[Captured] {label} "
-                        f"sample #{capture_count}"
-                    )
+                        f"sample #{capture_count} "
+                        f"({200 - samples_to_capture}/200)"
+                        )
 
-                else: 
-                    print(
-                        "[SKIPPED] No hands detected."
-                    )
+                    if samples_to_capture <= 0:
+                        auto_capturing = False
+                        
+                        print()
+                        print(f"[COMPLETE] Collected 200 samples for {label}")
+                        print()
+                    
+                else:
+                    print("[SKIPPED] No hands detected.")
+                    last_capture_time = current_time
+
         
         elif key == ord("l"):
             cv2.destroyWindow("Naruto Hand Sign Data Collector")
