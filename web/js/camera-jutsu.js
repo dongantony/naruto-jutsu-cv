@@ -25,6 +25,10 @@ import {
 } from "./tracking/handPrediction.js"
 
 import {
+    processJutsuPrediction
+} from "./jutsu/jutsuDetector.js"
+
+import {
     FilesetResolver,
     HandLandmarker
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/+esm"
@@ -171,8 +175,17 @@ function onResults(results) {
         predictHandSign(features).then(result => {
             if(!result) return
 
-            console.log("Predicted Sign:", result.prediction)
-            console.log("Probabilities:", result.probabilities)
+            // Prediction Console Logs
+            // console.log("Predicted Sign:", result.prediction)
+            // console.log("Probabilities:", result.probabilities)
+
+            const jutsuState = processJutsuPrediction(result.prediction, result.probabilities[result.prediction] ?? 0)
+
+            console.log("Jutsu Sequence:", jutsuState.sequence)
+
+            if(jutsuState.lastJutsu) {
+                console.log("JUTSU ACTIVATED:", jutsuState.lastJutsu.name)
+            }
         })
         .catch(error => {
             console.error("Prediction Error:", error)
@@ -180,14 +193,6 @@ function onResults(results) {
         .finally(() => {
             predictionInProgress = false
         })
-    }
-
-    // Status
-    if(visibleHands === 0) {
-        status.innerText = "No hands detected."
-    }
-    else {
-        status.innerText = `${visibleHands} hand${visibleHands === 1 ? "" : "s"} detected`
     }
 }
 

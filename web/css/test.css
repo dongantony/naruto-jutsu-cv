@@ -1,0 +1,420 @@
+/* Global */
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+:root {
+    --background: #0b0b0f;
+    --background-light: #121218;
+
+    --card: #16161d;
+    --card-light: #1d1d25;
+
+    --border: #2a2a35;
+    --radius: 14px;
+    
+    --green: #42d392;
+    --orange: #ff7a00;
+    --orange-light: #ff9d42;
+    --orange-dark: #d95f00;
+    
+    --text: #f5f5f5;
+    --text-secondary: #a5a5b0;
+    --text-muted: #70707c;
+}
+
+
+/* Body */
+
+body {
+    min-height: 100vh;
+
+    color: var(--text);
+    font-family: Inter, Arial, Helvetica, sans-serif;
+    text-align: left;
+    
+    background:
+        radial-gradient(circle at top left,rgba(255, 122, 0, 0.08), transparent 35%),
+        radial-gradient(circle at bottom right,rgba(255, 122, 0, 0.05), transparent 35%),
+        var(--background);
+}
+
+
+/*  Header */
+
+.app-header {
+    width: min(1500px, 94%);
+    margin: 0 auto;
+    padding: 28px 0;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid var(--border);
+}
+
+.app-header h1 {
+    font-size: 28px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.app-header p {
+    margin-top: 6px;
+    color: var(--text-secondary);
+    font-size: 14px;
+}
+
+
+/* Model Status */
+
+.model-status {
+    display: flex;
+    align-items: center;
+    gap: 9px;
+    padding: 9px 14px;
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    background: rgba(255, 255, 255, 0.025);
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.status-dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: var(--green);
+    box-shadow: 0 0 8px rgba(66, 211, 146, 0.8);
+}
+
+
+/* Main Layout */
+
+.app-container {
+    width: min(1500px, 94%);
+    margin: 28px auto 40px;
+    display: grid;
+    gap: 24px;
+    align-items: start;
+
+    grid-template-columns:
+        minmax(0, 1.7fr)
+        minmax(350px, 0.8fr);
+}
+
+
+/* Section Headers */
+
+.section-header, .prediction-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 14px;
+}
+
+.section-header h2, .prediction-header h2 {
+    font-size: 18px;
+    font-weight: 600;
+}
+
+.section-header #status {
+    margin: 0;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+
+/* Camera Section */
+
+.camera-section {
+    min-width: 0;
+}
+
+.camera-container {
+    position: relative;
+    width: 100%;
+    aspect-ratio: 16 / 9;
+    overflow: hidden;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    background: #050505;
+    box-shadow: 0 15px 45px rgba(0, 0, 0, 0.35);
+}
+
+.camera-container video,
+.camera-container canvas {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    border: none;
+    border-radius: 0;
+}
+
+.camera-container video {
+    transform: scaleX(-1);
+}
+
+.camera-container canvas {
+    transform: scaleX(-1);
+    pointer-events: none;
+}
+
+
+/* Camera Overlay */
+
+.camera-container::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border: 1px solid rgba(255, 122, 0, 0.18);
+    border-radius: var(--radius);
+}
+
+.camera-overlay {
+    position: absolute;
+    top: 16px;
+    left: 16px;
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 6px 10px;
+    border-radius: 6px;
+    background: rgba(0, 0, 0, 0.65);
+    backdrop-filter: blur(8px);
+    color: #ddd;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 1px;
+}
+
+.recording-indicator {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background: #ff4d4d;
+    box-shadow: 0 0 7px rgba(255, 77, 77, 0.8);
+}
+
+
+/* Prediction Section */
+
+.prediction-section {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+
+/* Prediction Card */
+
+.prediction-card, .probabilities-card {
+    padding: 22px;
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, 0.2);
+
+    background:
+        linear-gradient(145deg, rgba(255, 255, 255, 0.035), rgba(255, 255, 255, 0.01)),
+        var(--card);
+}
+
+
+/* Prediction */
+
+.prediction-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-muted);
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1.2px;
+}
+
+#prediction {
+    min-height: 42px;
+    margin-bottom: 24px;
+    color: var(--orange-light);
+    font-size: 32px;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+
+/* Prediction Confidence */
+
+.prediction-confidence {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 8px;
+    color: var(--text-secondary);
+    font-size: 13px;
+}
+
+.prediction-confidence strong {
+    color: var(--text);
+    font-weight: 600;
+}
+
+
+/* Main Confidence Bar */
+
+.confidence-bar {
+    width: 100%;
+    height: 8px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #292932;
+}
+
+.confidence-fill {
+    height: 100%;
+    border-radius: inherit;
+    background: linear-gradient(90deg, var(--orange-dark), var(--orange-light));
+    box-shadow: 0 0 12px rgba(255, 122, 0, 0.35);
+    transition: width 0.25s ease;
+}
+
+
+/* Probability Card */
+
+.card-header {
+    margin-bottom: 20px;
+}
+
+.card-header h3 {
+    font-size: 16px;
+    font-weight: 600;
+}
+
+.card-header p {
+    margin-top: 5px;
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+
+/* Probability Rows */
+
+#probability-list {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.probability-row {
+    width: 100%;
+}
+
+.probability-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 7px;
+    font-size: 13px;
+}
+
+.sign-name {
+    color: var(--text-secondary);
+}
+
+.sign-probability {
+    color: var(--text);
+    font-weight: 600;
+}
+
+
+/* Probability Bars */
+
+.probability-bar {
+    width: 100%;
+    height: 6px;
+    overflow: hidden;
+    border-radius: 999px;
+    background: #292932;
+}
+
+.probability-fill {
+    height: 100%;
+    min-width: 0;
+    border-radius: inherit;
+    background: var(--orange);
+    opacity: 0.8;
+    transition: width 0.3s ease;
+}
+
+
+/* Footer */
+
+.app-footer {
+    width: min(1500px, 94%);
+    margin: 0 auto;
+    padding: 20px 0 28px;
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid var(--border);
+    color: var(--text-muted);
+    font-size: 12px;
+}
+
+
+/* Responsive */
+
+@media (max-width: 1000px) {
+
+    .app-container {
+        grid-template-columns: 1fr;
+    }
+
+    .prediction-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .prediction-header {
+        grid-column: 1 / -1;
+        margin-bottom: 0;
+    }
+
+}
+
+@media (max-width: 700px) {
+
+    .app-header {
+        align-items: flex-start;
+        gap: 15px;
+        flex-direction: column;
+    }
+
+    .app-header h1 {
+        font-size: 23px;
+    }
+
+    .app-container {
+        width: 94%;
+        margin-top: 20px;
+    }
+
+    .prediction-section {
+        display: flex;
+    }
+
+    .prediction-card, .probabilities-card {
+        padding: 18px;
+    }
+
+    #prediction {
+        font-size: 26px;
+    }
+
+    .app-footer {
+        flex-direction: column;
+        gap: 8px;
+    }
+
+}

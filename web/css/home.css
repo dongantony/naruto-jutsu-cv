@@ -1,0 +1,186 @@
+/* Body */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-family: Arial, Helvetica, sans-serif;
+    background: #0f1115;
+    color: #f1f1f1;
+}
+
+
+/* Header */
+
+.app-header {
+    text-align: center;
+    padding: 60px 20px 40px;
+    border-bottom: 1px solid #292d35;
+}
+
+.app-header h1 {
+    font-size: 2.8rem;
+    font-weight: 700;
+    letter-spacing: 1px;
+    margin-bottom: 12px;
+}
+
+.app-header p {
+    color: #9da3ae;
+    font-size: 1.1rem;
+}
+
+
+/* Main Menu */
+
+.menu-container {
+    flex: 1;
+    width: 100%;
+    max-width: 1100px;
+    margin: 0 auto;
+    padding: 60px 30px;
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 30px;
+    align-items: center;
+}
+
+
+/* Menu Cards */
+
+.menu-card {
+    min-height: 360px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 45px 40px;
+    text-align: center;
+    text-decoration: none;
+    color: inherit;
+    background: #171a20;
+    border: 1px solid #2a2e37;
+    border-radius: 16px;
+    transition:
+        transform 0.25s ease,
+        border-color 0.25s ease,
+        background 0.25s ease,
+        box-shadow 0.25s ease;
+}
+
+.menu-card:hover {
+    transform: translateY(-8px);
+    background: #1b1f26;
+    border-color: #555c68;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+}
+
+.menu-card:active {
+    transform: translateY(-3px);
+}
+
+
+/* Icon */
+
+.menu-icon {
+    width: 90px;
+    height: 90px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 25px;
+    border: 1px solid #3b414c;
+    border-radius: 50%;
+    font-size: 3rem;
+    color: #ffffff;
+    background: #20242c;
+}
+
+
+/* Card Text */
+
+.menu-card h2 {
+    font-size: 1.8rem;
+    margin-bottom: 15px;
+}
+
+.menu-card p {
+    max-width: 380px;
+    color: #9da3ae;
+    line-height: 1.6;
+    margin-bottom: 30px;
+}
+
+
+/* Button */
+
+.menu-button {
+    display: inline-block;
+    padding: 12px 24px;
+    border-radius: 8px;
+    background: #252a33;
+    border: 1px solid #3a414d;
+    font-size: 0.95rem;
+    font-weight: 600;
+    transition:
+        background 0.2s ease,
+        border-color 0.2s ease;
+}
+
+.menu-card:hover .menu-button {
+    background: #303641;
+    border-color: #555d69;
+}
+
+
+/* Footer */
+
+.app-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 35px;
+    border-top: 1px solid #292d35;
+    color: #777e89;
+    font-size: 0.85rem;
+}
+
+
+/* Responsive */
+
+@media (max-width: 750px) {
+
+    .app-header {
+        padding: 45px 20px 30px;
+    }
+
+    .app-header h1 {
+        font-size: 2rem;
+    }
+
+    .app-header p {
+        font-size: 1rem;
+    }
+
+    .menu-container {
+        grid-template-columns: 1fr;
+
+        padding: 40px 20px;
+    }
+
+    .menu-card {
+        min-height: 320px;
+    }
+
+    .app-footer {
+        flex-direction: column;
+        gap: 8px;
+        text-align: center;
+    }
+}
