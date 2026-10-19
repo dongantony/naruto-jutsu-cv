@@ -11,7 +11,7 @@ export const JUTSUS = [
     {
         id: "fireball-jutsu",
         name:  "Fire Style: Fireball Jutsu",
-        element: "Fire",
+        type: "Fire",
         signs: [
             "Snake",
             "Ram",
@@ -20,6 +20,32 @@ export const JUTSUS = [
             "Horse",
             "Tiger"
         ], 
+        maxDuration: 5000
+    },
+    {
+        id: "reaper-death-seal",
+        name: "Dead Demon Consuming Seal",
+        type: "Sealing",
+        signs: [
+            "Snake",
+            "Boar",
+            "Ram",
+            "Hare",
+            "Dog",
+            "Rat",
+            "Bird",
+            "Horse",
+            "Snake"
+        ],
+        maxDuration: 10000
+    },
+    {
+        id: "shadow-clone-jutsu",
+        name: "Multi-Shadow Clone Jutsu",
+        type: "Shadow Clone",
+        signs: [
+            "ShadowClone"
+        ],
         maxDuration: 10000
     }
 ]

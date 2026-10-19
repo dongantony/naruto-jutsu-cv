@@ -1,186 +1,137 @@
-/* Body */
 
-* {
-    margin: 0;
-    padding: 0;
-    box-sizing: border-box;
-}
-
-body {
-    min-height: 100vh;
-    display: flex;
-    flex-direction: column;
-    font-family: Arial, Helvetica, sans-serif;
-    background: #0f1115;
-    color: #f1f1f1;
-}
-
-
-/* Header */
+/* Home Page */
 
 .app-header {
     text-align: center;
     padding: 60px 20px 40px;
-    border-bottom: 1px solid #292d35;
+    border-bottom: 1px solid var(--border);
 }
 
 .app-header h1 {
-    font-size: 2.8rem;
-    font-weight: 700;
-    letter-spacing: 1px;
     margin-bottom: 12px;
+    font-size: clamp(2rem, 4vw, 2.8rem);
 }
 
 .app-header p {
-    color: #9da3ae;
-    font-size: 1.1rem;
+    font-size: 1.05rem;
 }
 
-
-/* Main Menu */
+.hero-eyebrow {
+    display: inline-block;
+    margin-bottom: 14px;
+    padding: 6px 12px;
+    border: 1px solid rgba(255, 112, 46, 0.25);
+    border-radius: 999px;
+    background: rgba(255, 112, 46, 0.07);
+    color: var(--accent-light);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+}
 
 .menu-container {
     flex: 1;
-    width: 100%;
-    max-width: 1100px;
+    width: min(1100px, 100%);
     margin: 0 auto;
     padding: 60px 30px;
     display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 30px;
-    align-items: center;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 28px;
+    align-items: stretch;
 }
 
-
-/* Menu Cards */
-
 .menu-card {
-    min-height: 360px;
+    position: relative;
+    overflow: hidden;
+    min-height: 350px;
+    padding: 40px 30px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 45px 40px;
     text-align: center;
     text-decoration: none;
     color: inherit;
-    background: #171a20;
-    border: 1px solid #2a2e37;
-    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 20px;
     transition:
-        transform 0.25s ease,
-        border-color 0.25s ease,
-        background 0.25s ease,
-        box-shadow 0.25s ease;
+        transform var(--transition),
+        border-color var(--transition),
+        box-shadow var(--transition);
 }
 
 .menu-card:hover {
-    transform: translateY(-8px);
-    background: #1b1f26;
-    border-color: #555c68;
-    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.35);
+    transform: translateY(-6px);
+    border-color: var(--border-active);
+    background: var(--surface-raised);
+    box-shadow: 0 18px 55px rgba(0, 0, 0, 0.3);
 }
-
-.menu-card:active {
-    transform: translateY(-3px);
-}
-
-
-/* Icon */
 
 .menu-icon {
-    width: 90px;
-    height: 90px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: 25px;
-    border: 1px solid #3b414c;
+    width: 86px;
+    height: 86px;
+    margin-bottom: 24px;
+    display: grid;
+    place-items: center;
+    border: 1px solid rgba(255, 112, 46, 0.3);
     border-radius: 50%;
-    font-size: 3rem;
-    color: #ffffff;
-    background: #20242c;
+    background: rgba(255, 112, 46, 0.08);
+    color: var(--accent-light);
+    font-size: 2.8rem;
 }
 
-
-/* Card Text */
-
 .menu-card h2 {
-    font-size: 1.8rem;
-    margin-bottom: 15px;
+    margin-bottom: 12px;
+    font-size: 1.7rem;
 }
 
 .menu-card p {
     max-width: 380px;
-    color: #9da3ae;
-    line-height: 1.6;
-    margin-bottom: 30px;
+    margin-bottom: 25px;
+    color: var(--text-secondary);
+    line-height: 1.8;
 }
 
-
-/* Button */
-
 .menu-button {
-    display: inline-block;
-    padding: 12px 24px;
-    border-radius: 8px;
-    background: #252a33;
-    border: 1px solid #3a414d;
-    font-size: 0.95rem;
+    padding: 11px 22px;
+    border: 1px solid rgba(255, 112, 46, 0.3);
+    border-radius: var(--radius-small);
+    background: rgba(255, 112, 46, 0.1);
+    color: var(--accent-light);
     font-weight: 600;
-    transition:
-        background 0.2s ease,
-        border-color 0.2s ease;
+    transition: var(--transition);
 }
 
 .menu-card:hover .menu-button {
-    background: #303641;
-    border-color: #555d69;
+    background: var(--accent);
+    color: #150b07;
 }
-
-
-/* Footer */
-
-.app-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding: 20px 35px;
-    border-top: 1px solid #292d35;
-    color: #777e89;
-    font-size: 0.85rem;
-}
-
-
-/* Responsive */
 
 @media (max-width: 750px) {
-
     .app-header {
         padding: 45px 20px 30px;
     }
 
-    .app-header h1 {
-        font-size: 2rem;
-    }
-
-    .app-header p {
-        font-size: 1rem;
-    }
-
     .menu-container {
+        padding: 35px 20px;
         grid-template-columns: 1fr;
-
-        padding: 40px 20px;
     }
 
     .menu-card {
-        min-height: 320px;
+        min-height: 300px;
     }
 
     .app-footer {
+        align-items: center;
         flex-direction: column;
         gap: 8px;
         text-align: center;
+    }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .menu-card:hover {
+        transform: none;
     }
 }

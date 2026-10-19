@@ -1,20 +1,10 @@
 import {
     getHandSlots,
-    getVisibleHands
 } from "./tracking/handSlots.js"
 
 import {
     processHandResults
 } from "./tracking/handTracker.js"
-
-import {
-    drawHand,
-    drawTwoHandInfo
-} from "./ui/drawing.js"
-
-import {
-    getHandRelationship
-} from "./tracking/handRelationship.js"
 
 import {
     extractHandFeatures
@@ -25,13 +15,36 @@ import {
 } from "./tracking/handPrediction.js"
 
 import {
-    processJutsuPrediction
+    JUTSUS
+}   from "./jutsu/jutsuDefinitions.js"
+
+import {
+    processJutsuPrediction,
+    getJutsuState
 } from "./jutsu/jutsuDetector.js"
+
+import {
+    initializeFireballOverlay,
+    triggerFireball
+} from "./jutsu/effectFireball.js" 
+
+import {
+    initializeReaperSeal,
+    triggerReaperSeal,
+    isReaperSealActive
+} from "./jutsu/effectReaper.js"
+
+import {
+    initializeCloneOverlay,
+    triggerShadowClone,
+    isShadowCloneActive,
+    drawShadowClones
+} from "./jutsu/effectClone.js"
 
 import {
     FilesetResolver,
     HandLandmarker
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/+esm"
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs"
 
 
 // Camera Width and Height
@@ -49,11 +62,47 @@ const HAND_LANDMARKER_MODEL = "../../hand_landmarker.task"
 // 6-7 predictions per second
 const PREDICTION_INTERVAL = 150
 
+// Sign Images
+const SIGN_IMAGES = {
+    Bird: "/web/images/signs/Bird.png",
+    Boar: "/web/images/signs/Boar.png",
+    Dog: "/web/images/signs/Dog.png",
+    Dragon: "/web/images/signs/Dragon.png",
+    Hare: "/web/images/signs/Hare.png",
+    Horse: "/web/images/signs/Horse.png",
+    Monkey: "/web/images/signs/Monkey.png",
+    Ox: "/web/images/signs/Ox.png",
+    Ram: "/web/images/signs/Ram.png",
+    Rat: "/web/images/signs/Rat.png",
+    Snake: "/web/images/signs/Snake.png",
+    Tiger: "/web/images/signs/Tiger.png"
+}
+
+// Jutsu Overlays
+const fireballCanvas = document.getElementById("fireball-overlay")
+
+const reaperBackground = new Image()
+reaperBackground.src = "/web/images/jutsus/shinigami.png"
+
+const personCanvas = document.createElement("canvas")
+const personCtx = personCanvas.getContext("2d")
+
+let selfieSegmentation = null
+
 // Last prediction time.
 let lastPredictionTime = 0
 
 // Prevent multiple requests from being active at the same time.
 let predictionInProgress = false
+
+// Selected Jutsu for UI.
+let selectedJutsu = null
+
+// Last Displayed Activated Jutsu.
+let lastDisplayedActivation = null
+
+// Timer updating the UI state for hand sign cards.
+let jutsuUITimer = null
 
 
 // MediaPipe and DOM
@@ -66,6 +115,13 @@ const ctx = canvas.getContext('2d')
 const detectionCanvas = document.createElement('canvas')
 const detectionCtx = detectionCanvas.getContext('2d')
 
+const jutsuSelect = document.getElementById("jutsu-select")
+const selectedJutsuName = document.getElementById("selected-jutsu-name")
+const selectedJutsuDescription = document.getElementById("selected-jutsu-description")
+const jutsuSignsContainer = document.getElementById("jutsu-signs")
+const signProgress = document.getElementById("sign-progress")
+const jutsuNameDisplay = document.getElementById("jutsu-name")
+
 detectionCanvas.width = 1280
 detectionCanvas.height = 720
 
@@ -74,7 +130,7 @@ let handLandmarker = null
 async function createHandLandmarker() {
     console.log("Loading MediaPipe and Hand Landmarker...")
 
-    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm")
+    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm")
 
     handLandmarker = await HandLandmarker.createFromOptions(
         vision,
@@ -95,47 +151,49 @@ async function createHandLandmarker() {
 // Camera Frame Processing 
 
 let lastVideoTime = -1
+let segmentationInProgress = false
 
-function processFrame() {
-    
-    if(!handLandmarker) {
+async function processFrame() {
+    try {
+        if(!handLandmarker || !selfieSegmentation || video.readyState < 2 || video.currentTime === lastVideoTime) return
+
+        lastVideoTime = video.currentTime
+
+        const timestampMs = performance.now()
+
+        detectionCtx.save()
+        detectionCtx.scale(-1, 1)
+        detectionCtx.drawImage(video, -detectionCanvas.width, 0, detectionCanvas.width, detectionCanvas.height)
+        detectionCtx.restore()
+
+        const results = handLandmarker.detectForVideo(
+            detectionCanvas,
+            timestampMs
+        )
+
+        onResults(results)
+
+        if(!segmentationInProgress) {
+            segmentationInProgress = true
+
+            try {
+                await selfieSegmentation.send({ image: video })
+            } 
+            finally {
+                segmentationInProgress = false
+            }
+        }
+    } 
+    catch (error) {
+        console.error("Frame processing error:", error)
+    } 
+    finally {
         requestAnimationFrame(processFrame)
-        return
     }
-    if(video.readyState < 2) {
-        requestAnimationFrame(processFrame)
-        return    
-    }
-    if(video.currentTime === lastVideoTime) {
-        requestAnimationFrame(processFrame)
-        return
-    }
-
-    lastVideoTime = video.currentTime
-    
-    const timestampMs = performance.now()
-
-    detectionCtx.save()
-    detectionCtx.scale(-1, 1)
-    detectionCtx.drawImage(video, -detectionCanvas.width, 0, detectionCanvas.width, detectionCanvas.height)
-    detectionCtx.restore()
-
-    const results = handLandmarker.detectForVideo(detectionCanvas, timestampMs)
-
-    onResults(results)
-    requestAnimationFrame(processFrame)
 }
 
 function onResults(results) {
-    canvas.width = video.videoWidth
-    canvas.height = video.videoHeight
-    
-    ctx.clearRect(0, 0, canvas.width, canvas.height)
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height)
-
-    // Convert MediaPipe Task result into our internal hand representation and update hand slots.
     const detectedHands = processHandResults(results)
-
     const handSlots = getHandSlots()
 
     let visibleHands = 0
@@ -146,16 +204,6 @@ function onResults(results) {
         if(!slot.active || !slot.visible || !slot.landmarks) continue
 
         visibleHands++
-
-        drawHand(ctx, canvas, slot, i)
-    }
-
-    // Two-Hand Relationship
-    const { left, right } = getVisibleHands()
-    const relationship = getHandRelationship(left, right)
-    
-    if(relationship.available) {
-        drawTwoHandInfo(ctx, relationship)
     }
 
     // Machine Learning Prediction
@@ -181,10 +229,35 @@ function onResults(results) {
 
             const jutsuState = processJutsuPrediction(result.prediction, result.probabilities[result.prediction] ?? 0)
 
-            console.log("Jutsu Sequence:", jutsuState.sequence)
+            if(selectedJutsu) {
+                renderJutsuSigns(jutsuState.sequence)
 
-            if(jutsuState.lastJutsu) {
-                console.log("JUTSU ACTIVATED:", jutsuState.lastJutsu.name)
+                if(jutsuState.activeJutsu) {
+                    startJutsuUITimer()
+                }
+            }
+
+            if(jutsuState.lastJutsu && jutsuState.lastJutsu.timestamp !== lastDisplayedActivation) {
+                lastDisplayedActivation = jutsuState.lastJutsu.timestamp
+
+                const activatedJutsu = jutsuState.lastJutsu
+
+                if(selectedJutsu && activatedJutsu.id === selectedJutsu.id) {
+                    renderJutsuSigns(selectedJutsu.signs)
+                    startJutsuUITimer()
+
+                    jutsuNameDisplay.textContent = activatedJutsu.name
+
+                    if(activatedJutsu.id === "fireball-jutsu") {
+                        triggerFireball(detectedHands[0]?.landmarks)
+                    }
+                    if(activatedJutsu.id === "reaper-death-seal") {
+                        triggerReaperSeal(activatedJutsu.maxDuration)
+                    }
+                    if(activatedJutsu.id === "shadow-clone-jutsu") {
+                        triggerShadowClone(activatedJutsu.maxDuration)
+                    }
+                }
             }
         })
         .catch(error => {
@@ -194,6 +267,214 @@ function onResults(results) {
             predictionInProgress = false
         })
     }
+}
+
+
+// Jutsu UI (Populate the dropdown and display the selected jutsu and required signs)
+
+function populateJutsuSelector() {
+    for (const jutsu of JUTSUS) {
+        const option = document.createElement("option")
+
+        option.value = jutsu.id
+        option.textContent = jutsu.name
+
+        jutsuSelect.appendChild(option)
+    }
+}
+
+function selectJutsu(jutsuID) {
+    if (jutsuUITimer !== null) {
+        clearInterval(jutsuUITimer)
+        jutsuUITimer = null
+    }
+    
+    selectedJutsu = JUTSUS.find(jutsu => jutsu.id === jutsuID) ?? null
+
+    if(!selectedJutsu) {
+        selectedJutsuName.textContent = "Choose a Jutsu"
+        selectedJutsuDescription.textContent = "Select a jutsu to see the required hand signs."
+
+        jutsuSignsContainer.replaceChildren()
+        signProgress.textContent = "0 / 0 signs completed"
+        return
+    }
+
+    selectedJutsuName.textContent = selectedJutsu.name
+    selectedJutsuDescription.textContent = `Element: ${selectedJutsu.type}`
+
+    renderJutsuSigns([])
+}
+
+function renderJutsuSigns(sequence = []) {
+    if(!selectedJutsu) return
+
+    const state = getJutsuState()
+    const active = state.activeJutsu?.id === selectedJutsu.id
+
+    // Count how many signs match the selected sequence in order.
+    let completed = 0
+
+    if(active) {
+        completed = selectedJutsu.signs.length
+    }
+    else {
+        for (let i = 0; i < sequence.length; i++) {
+            if(sequence[i] !== selectedJutsu.signs[i]) break
+            completed++
+        }
+    }
+
+    // During activation, show the final sign.
+    // Otherwise, show the next sign the user needs to perform.
+    
+    const signIndex = active ? selectedJutsu.signs.length - 1 : Math.min(completed, selectedJutsu.signs.length - 1)
+
+    const sign = selectedJutsu.signs[signIndex]
+
+    jutsuSignsContainer.replaceChildren()
+
+    const card = document.createElement("div")
+    card.className = "sign-card"
+
+    const number = document.createElement("span")
+    number.className = "sign-number"
+    number.textContent = `Sign ${signIndex + 1} of ${selectedJutsu.signs.length}`
+
+    const image = document.createElement("img")
+    image.className = "sign-image"
+    image.src = SIGN_IMAGES[sign] ?? ""
+    image.alt = `${sign} hand sign`
+    image.loading = "lazy"
+
+    image.addEventListener("error", () => {
+        image.alt = `${sign} image not found`
+        image.classList.add("image-error")
+    }, { once: true })
+
+    const signState = document.createElement("span")
+    signState.className = "sign-state"
+
+    if(active) {
+        card.classList.add("jutsu-active")
+        signState.textContent = `Jutsu active · ${Math.ceil(state.remainingDuration / 1000)}s`
+    } 
+    else if(completed > signIndex) {
+        card.classList.add("completed")
+        signState.textContent = "Completed"
+    } 
+    else {
+        card.classList.add("current")
+        signState.textContent = `Perform: ${sign}`
+    }
+
+    card.append(number, image, signState)
+    jutsuSignsContainer.appendChild(card)
+
+    signProgress.textContent = active
+        ? `Jutsu active · ${Math.ceil(state.remainingDuration / 1000)}s until ready`
+        : `${completed} / ${selectedJutsu.signs.length} signs completed`
+}
+
+function startJutsuUITimer() {
+    if(jutsuUITimer !== null) {
+        clearInterval(jutsuUITimer)
+    }
+
+    jutsuUITimer = setInterval(() => {
+        if(!selectedJutsu) return
+
+        const state = getJutsuState()
+
+        if(state.activeJutsu) {
+            renderJutsuSigns(state.sequence)
+        } 
+        else {
+            renderJutsuSigns(state.sequence)
+            clearInterval(jutsuUITimer)
+            jutsuUITimer = null
+        }
+    }, 100)
+}
+
+jutsuSelect.addEventListener("change", () => {
+    selectJutsu(jutsuSelect.value)
+})
+
+
+// Selfie Segmentation
+
+async function createSelfieSegmentation() {
+    selfieSegmentation = new SelfieSegmentation({
+        locateFile: (file) =>
+            `https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/${file}`
+    })
+
+    selfieSegmentation.setOptions({
+        modelSelection: 1
+    })
+
+    selfieSegmentation.onResults(drawSegmentedFrame)
+
+    console.log("Selfie Segmentation loaded.")
+}
+
+function drawSegmentedFrame(results) {
+    if(!video.videoWidth || !video.videoHeight) return
+
+    const width = video.videoWidth
+    const height = video.videoHeight
+
+    if(canvas.width !== width || canvas.height !== height) {
+        canvas.width = width
+        canvas.height = height
+
+        personCanvas.width = width
+        personCanvas.height = height
+    }
+
+    // 1. Extract the person using the segmentation mask.
+    personCtx.clearRect(0, 0, width, height)
+    personCtx.drawImage(results.image, 0, 0, width, height)
+
+    personCtx.save()
+    personCtx.filter = "blur(3px)"
+    personCtx.globalCompositeOperation = "destination-in"
+    personCtx.drawImage(results.segmentationMask, 0, 0, width, height)
+    personCtx.restore()
+
+    personCtx.globalCompositeOperation = "source-over"
+    personCtx.filter = "none"
+
+    // 2. Shadow Clone mode.
+    if(isShadowCloneActive()) {
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(results.image, 0, 0, width, height)
+        ctx.drawImage(personCanvas, 0, 0, width, height)
+        drawShadowClones(ctx, width, height)
+
+        return
+    }
+
+    // 3. Normal camera mode.
+    if(!isReaperSealActive()) {
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(results.image, 0, 0, width, height)
+        return
+    }
+
+    // 4. Reaper Seal mode.
+    if(!reaperBackground.complete || !reaperBackground.naturalWidth) {
+        ctx.clearRect(0, 0, width, height)
+        ctx.drawImage(results.image, 0, 0, width, height)
+        return
+    }
+
+    ctx.clearRect(0, 0, width, height)
+
+    // Draw the Reaper background and the segmented person in front of it.
+    ctx.drawImage(reaperBackground, 0, 0, width, height)
+    ctx.drawImage(personCanvas, 0, 0, width, height)
 }
 
 
@@ -219,6 +500,10 @@ async function startCamera() {
 
         await video.play()
 
+        initializeFireballOverlay(video, fireballCanvas)
+        initializeReaperSeal()
+        initializeCloneOverlay(personCanvas)
+
         console.log("Camera started:", video.videoWidth, "x", video.videoHeight)
         
         requestAnimationFrame(processFrame)
@@ -235,6 +520,7 @@ async function main() {
 
     try {
         await createHandLandmarker()
+        await createSelfieSegmentation()
         await startCamera()
     }
     catch(error) {
@@ -244,4 +530,5 @@ async function main() {
     }
 }
 
+populateJutsuSelector()
 main()

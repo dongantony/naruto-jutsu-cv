@@ -25,13 +25,9 @@ import {
 } from "./tracking/handPrediction.js"
 
 import {
-    processJutsuPrediction
-} from "./jutsu/jutsuDetector.js"
-
-import {
     FilesetResolver,
     HandLandmarker
-} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/+esm"
+} from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs"
 
 
 // Camera Width and Height
@@ -59,6 +55,10 @@ let predictionInProgress = false
 const NO_HANDS_RESET_TIME = 5000
 let noHandsSince = null
 
+// Frames per second
+let fpsFrames = 0
+let fpsLastUpdate = performance.now()
+
 
 // MediaPipe and DOM
 
@@ -75,15 +75,31 @@ const predictionConfidence = document.getElementById("prediction-confidence")
 const predictionConfidenceBar = document.getElementById("prediction-confidence-bar")
 const probabilityList = document.getElementById("probability-list")
 
+const modelStatus = document.getElementById("model-status")
+const modelStatusText = document.getElementById("model-status-text")
+const cameraState = document.getElementById("camera-state")
+const cameraMessage = document.getElementById("camera-message")
+const cameraStatusCopy = document.querySelector(".camera-status-copy")
+
+const hudTracking = document.getElementById("hud-tracking")
+const handCount = document.getElementById("hand-count")
+const fpsCounter = document.getElementById("fps-counter")
+const cameraResolution = document.getElementById("camera-resolution")
+
+const landmarkStatus = document.getElementById("landmark-status")
+const predictionEngineStatus = document.getElementById("prediction-engine-status")
+const predictionDescription = document.getElementById("prediction-description")
+
 detectionCanvas.width = 1280
 detectionCanvas.height = 720
 
 let handLandmarker = null
 
+
 async function createHandLandmarker() {
     console.log("Loading MediaPipe and Hand Landmarker...")
 
-    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision/wasm")
+    const vision = await FilesetResolver.forVisionTasks("https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/wasm")
 
     handLandmarker = await HandLandmarker.createFromOptions(
         vision,
@@ -123,6 +139,7 @@ function processFrame() {
     lastVideoTime = video.currentTime
     
     const timestampMs = performance.now()
+    updateFPS()
 
     detectionCtx.save()
     detectionCtx.scale(-1, 1)
@@ -189,14 +206,6 @@ function onResults(results) {
             // console.log("Probabilities:", result.probabilities)
             
             updatePredictionUI(result)
-
-            const jutsuState = processJutsuPrediction(result.prediction, result.probabilities[result.prediction] ?? 0)
-
-            console.log("Jutsu Sequence:", jutsuState.sequence)
-
-            if(jutsuState.lastJutsu) {
-                console.log("JUTSU ACTIVATED:", jutsuState.lastJutsu.name)
-            }
         })
         .catch(error => {
             console.error("Prediction Error:", error)
@@ -207,19 +216,31 @@ function onResults(results) {
     }
 
     // Status
-    if(visibleHands === 0) {
-        status.innerText = "No hands detected."
 
-        if(noHandsSince === null) {
-            noHandsSince = performance.now()
-        }
+    handCount.textContent = `${visibleHands} HAND${visibleHands === 1 ? "" : "S"} DETECTED`
+
+    if(visibleHands === 0) {
+        status.textContent = "No hands detected. Show your hand to the camera."
+
+        setCameraState("waiting", "WAITING")
+        hudTracking.textContent = "STANDBY"
+        landmarkStatus.textContent = "SEARCHING"
+
+        noHandsSince ??= performance.now()
 
         if(performance.now() - noHandsSince >= NO_HANDS_RESET_TIME) {
             resetPredictionUI()
         }
-    }
+    } 
     else {
-        status.innerText = `${visibleHands} hand${visibleHands === 1 ? "" : "s"} detected`
+        status.textContent = `${visibleHands} hand${visibleHands === 1 ? "" : "s"} detected`
+
+        setCameraState("tracking", "TRACKING")
+        hudTracking.textContent = "ACTIVE"
+        landmarkStatus.textContent = "ACTIVE"
+
+        noHandsSince = null
+        hideCameraMessage()
     }
 }
 
@@ -228,66 +249,129 @@ function onResults(results) {
 
 function updatePredictionUI(result) {
     const prediction = result.prediction
-    const probabilities = result.probabilities
+    const probabilities = result.probabilities ?? {}
 
-    predictionElement.innerText = prediction
+    const confidence = Math.max(0, Math.min(1, Number(probabilities[prediction]) || 0))
 
-    const confidence = probabilities[prediction] ?? 0
     const confidencePercent = confidence * 100
 
-    predictionConfidence.innerText = `${confidencePercent.toFixed(1)}%`
+    predictionElement.textContent = prediction
+    predictionDescription.textContent = "Sign recognized by the prediction model."
+
+    predictionConfidence.textContent = `${confidencePercent.toFixed(1)}%`
     predictionConfidenceBar.style.width = `${confidencePercent}%`
 
-    // Clear probability list
-    probabilityList.innerHTML = ""
+    predictionEngineStatus.textContent = "ACTIVE"
 
-    // Sort highest probability first
-    const sortedProbabilities = Object.entries(probabilities).sort((a, b) => b[1] - a[1])
+    // Rank predictions from highest to lowest.
+    const sortedProbabilities = Object.entries(probabilities)
+        .filter(([, value]) => Number.isFinite(Number(value)))
+        .sort((a, b) => Number(b[1]) - Number(a[1]))
+        .slice(0, 5)
 
-    for(const[sign, probability] of sortedProbabilities) {
-        
-        const percent = probability * 100
+    probabilityList.replaceChildren()
+
+    sortedProbabilities.forEach(([sign, probability], index) => {
+
+        const percent = Math.max(0, Math.min(100, Number(probability) * 100))
+
         const row = document.createElement("div")
-
         row.className = "probability-row"
-        row.innerHTML = `
-            <div class="probability-info">
-                <span class="sign-name">${sign}</span>
-                <span class="sign-probability">${percent.toFixed(1)}%</span>
-            </div>
 
-            <div class="probability-bar">
-                <div
-                    class="probability-fill"
-                    style="width: ${percent}%">
-                </div>
-            </div>
-        `
+        if(index === 0) {
+            row.classList.add("is-top-prediction")
+        }
 
+        const info = document.createElement("div")
+        info.className = "probability-info"
+
+        const name = document.createElement("span")
+        name.className = "sign-name"
+        name.textContent = sign
+
+        const value = document.createElement("span")
+        value.className = "sign-probability"
+        value.textContent = `${percent.toFixed(1)}%`
+
+        info.append(name, value)
+
+        const bar = document.createElement("div")
+        bar.className = "probability-bar"
+
+        const fill = document.createElement("div")
+        fill.className = "probability-fill"
+        fill.style.width = `${percent}%`
+
+        bar.appendChild(fill)
+        row.append(info, bar)
         probabilityList.appendChild(row)
-    }
+    })
 }
 
 function resetPredictionUI() {
-    predictionElement.innerText = "Waiting..."
-    predictionConfidence.innerText = "0%"
+    predictionElement.textContent = "Waiting..."
+    predictionDescription.textContent = "Perform a hand sign to begin analysis."
+
+    predictionConfidence.textContent = "0%"
     predictionConfidenceBar.style.width = "0%"
 
-    probabilityList.innerHTML = `
-        <div class="probability-row">
-            <div class="probability-info">
-                <span class="sign-name">Unknown</span>
-                <span class="sign-probability">0%</span>
-            </div>
+    predictionEngineStatus.textContent = "STANDBY"
 
-            <div class="probability-bar">
-                <div
-                    class="probability-fill"
-                    style="width: 0%">
-                </div>
-            </div>
-        </div>
+    probabilityList.replaceChildren()
+
+    const empty = document.createElement("div")
+    empty.className = "empty-predictions"
+
+    const line = document.createElement("span")
+    line.className = "empty-prediction-line"
+
+    const message = document.createElement("p")
+    message.textContent = "Waiting for model output..."
+
+    empty.append(line, message)
+    probabilityList.appendChild(empty)
+}
+
+
+// UI Helper Functions
+
+function setModelStatus(state, message) {
+    modelStatus.dataset.state = state
+    modelStatusText.textContent = message
+}
+
+function setCameraState(state, message) {
+    cameraState.dataset.state = state
+    cameraState.innerHTML = `
+        <span class="live-dot"></span>
+        ${message}
     `
+    cameraStatusCopy.dataset.state = state
+}
+
+function updateFPS() {
+    fpsFrames++
+
+    const now = performance.now()
+
+    if(now - fpsLastUpdate >= 1000) {
+        const fps = fpsFrames * 1000 / (now - fpsLastUpdate)
+
+        fpsCounter.textContent = `${Math.round(fps)} FPS`
+
+        fpsFrames = 0
+        fpsLastUpdate = now
+    }
+}
+
+function showCameraMessage(title, description) {
+    cameraMessage.querySelector("strong").textContent = title
+    cameraMessage.querySelector("p").textContent = description
+    cameraMessage.classList.remove("is-hidden")
+}
+
+function hideCameraMessage() {
+    cameraMessage.classList.add("is-hidden")
 }
 
 
@@ -313,6 +397,12 @@ async function startCamera() {
 
         await video.play()
 
+        hideCameraMessage()
+
+        cameraResolution.textContent = `${video.videoWidth} × ${video.videoHeight}`
+        setCameraState("waiting", "WAITING")
+        status.textContent = "Camera connected. Waiting for hands."
+
         console.log("Camera started:", video.videoWidth, "x", video.videoHeight)
         
         requestAnimationFrame(processFrame)
@@ -327,14 +417,33 @@ async function startCamera() {
 async function main() {
     console.log("Initializing Naruto Hand Sign CV...")
 
+    setModelStatus("loading", "LOADING MODEL")
+    landmarkStatus.textContent = "LOADING"
+    predictionEngineStatus.textContent = "STANDBY"
+
     try {
         await createHandLandmarker()
+
+        landmarkStatus.textContent = "READY"
+        setModelStatus("ready", "MODEL READY")
+
         await startCamera()
-    }
-    catch(error) {
+
+        if(video.srcObject) {
+            setModelStatus("ready", "SYSTEM READY")
+        }
+    } 
+    catch (error) {
         console.error("Application startup failed:", error)
 
-        status.innerText = "Hand tracking initialization failed."
+        status.textContent = "Hand tracking initialization failed."
+
+        setModelStatus("error", "INITIALIZATION ERROR")
+        setCameraState("error", "ERROR")
+
+        landmarkStatus.textContent = "ERROR"
+
+        showCameraMessage("Initialization failed", "Check the model path, network connection, and browser console.")
     }
 }
 

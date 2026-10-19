@@ -1,0 +1,95 @@
+
+/* Shared Design System */
+
+:root {
+    color-scheme: dark;
+
+    --bg: #090a0e;
+    --surface: #11131a;
+    --surface-raised: #171a23;
+    --surface-hover: #20232e;
+
+    --border: #292d3a;
+    --border-active: #7c3827;
+
+    --accent: #ff702e;
+    --accent-light: #ffad65;
+    --accent-glow: rgba(255, 112, 46, 0.2);
+
+    --success: #48d6a0;
+    --text: #f5f5f7;
+    --text-secondary: #a1a5b4;
+    --text-muted: #73798a;
+
+    --radius: 16px;
+    --radius-small: 10px;
+    --transition: 200ms ease;
+}
+
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    color: var(--text);
+    font-family: Inter, "Segoe UI", Arial, sans-serif;
+    line-height: 1.5;
+    background:
+        radial-gradient(ellipse at 15% 0%,rgba(255, 87, 38, 0.09), transparent 35%),
+        var(--bg);
+}
+
+button,
+select,
+a {
+    -webkit-tap-highlight-color: transparent;
+}
+
+a:focus-visible,
+button:focus-visible,
+select:focus-visible {
+    outline: 2px solid var(--accent-light);
+    outline-offset: 4px;
+}
+
+.app-header {
+    border-color: var(--border);
+}
+
+.app-header h1 {
+    color: var(--text);
+    letter-spacing: -0.8px;
+}
+
+.app-header p {
+    color: var(--text-secondary);
+}
+
+.app-footer {
+    color: var(--text-muted);
+    border-color: var(--border);
+}
+
+::selection {
+    color: #150b07;
+    background: var(--accent);
+}
+
+@media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        transition-duration: 0.01ms !important;
+    }
+}

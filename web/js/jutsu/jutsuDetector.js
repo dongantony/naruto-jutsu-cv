@@ -6,9 +6,6 @@ import {
 // How long a prediction must remain stable before it is accepted as a hand sign.
 const STABLE_SIGN_TIME = 250
 
-// Minimum time between accepted signs. Prevents the same sign from being accepted repeatedly.
-const SIGN_COOLDOWN = 300
-
 // How long an incomplete sequence can remain active.
 const DEFAULT_SEQUENCE_TIMEOUT = 25000
 
@@ -22,11 +19,20 @@ class JutsuDetector {
         this.lastAcceptedSign = null
         this.lastAcceptedTime = 0
         this.sequenceStarted = null
+        this.activeJutsu = null
         this.lastJutsu = null        
     }
 
-    update(prediction, confidence = 0) {
+    update(prediction) {
         const now = performance.now()
+
+        if (this.activeJutsu) {
+            if (now < this.activeJutsu.expiresAt) {
+                return this.getState()
+            }
+
+            this.activeJutsu = null
+        }
 
         if(!prediction) {
             this.currentPrediction = null
@@ -69,20 +75,23 @@ class JutsuDetector {
         }
 
         this.sequence.push(sign)
-
-        console.log("Jutsu Sign:", sign, "| Sequence:", this.sequence.join(" → "))
         
         const jutsu = this.findMatchingJutsu()
 
-        if(jutsu) {
+        if (jutsu) {
             this.lastJutsu = {
                 ...jutsu,
                 timestamp: now
             }
 
-            console.log("🔥 JUTSU ACTIVATED:", jutsu.name)
+            this.activeJutsu = {
+                ...jutsu,
+                activatedAt: now,
+                expiresAt: now + jutsu.maxDuration
+            }
 
             this.resetSequence()
+            return
         }
 
         this.removeInvalidPrefix()
@@ -131,14 +140,23 @@ class JutsuDetector {
         this.lastAcceptedSign = null
         this.lastAcceptedTime = 0
         this.sequenceStarted = null
+        this.activeJutsu = null
         this.lastJutsu = null
     }
 
     getState() {
+        const now = performance.now()
+
+        if (this.activeJutsu && now >= this.activeJutsu.expiresAt) {
+            this.activeJutsu = null
+        }
+
         return {
             sequence: [...this.sequence],
             currentPrediction: this.currentPrediction,
             lastJutsu: this.lastJutsu,
+            activeJutsu: this.activeJutsu,
+            remainingDuration: this.activeJutsu ? Math.max(0, this.activeJutsu.expiresAt - now) : 0,
             active: this.sequence.length > 0
         }
     }

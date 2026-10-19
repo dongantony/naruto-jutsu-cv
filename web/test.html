@@ -3,50 +3,159 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="theme-color" content="#090a0e">
     <title>Naruto Hand Sign Detector</title>
+
+    <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/test.css">
 
-    <!-- MediaPipe -->
-    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/drawing_utils/drawing_utils.js"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 </head>
+
 <body>
     <header class="app-header">
-        <div>
-            <h1>Naruto Hand Sign Detector</h1>
+        <div class="brand">
+            <div class="brand-icon">
+                <span>꩜</span>
+            </div>
+
+            <div class="brand-copy">
+                <h1>Naruto Hand Sign Analysis</h1>
+                <p>COMPUTER VISION</p>
+            </div>
         </div>
 
-        <div class="model-status">
-            <span class="status-dot"></span>
-            <span>Model Ready</span>
+        <div class="model-status" id="model-status" data-state="loading">
+            <span class="status-dot" id="model-status-dot"></span>
+            <span id="model-status-text">INITIALIZING SYSTEM</span>
         </div>
     </header>
-    
+
     <main class="app-container">
+
+        <!-- Live camera -->
         <section class="camera-section">
             <div class="section-header">
-                <h2>Camera</h2>
-                <span id="status">No hands detected.</span>
+                <div class="section-title">
+                    <span class="section-index">01</span>
+                    <div>
+                        <h2>Live Camera</h2>
+                        <p>Real-time hand landmark tracking</p>
+                    </div>
+                </div>
+
+                <span class="live-indicator" id="camera-state">
+                    <span class="live-dot"></span>
+                    WAITING
+                </span>
             </div>
 
-            <div class="camera-container">
+            <div class="camera-container" id="camera-container">
                 <video id="webcam" autoplay playsinline muted></video>
                 <canvas id="output"></canvas>
-            </div>
-        </section>
 
-        <section class="prediction-section">
-            <div class="prediction-header">
-                <div>
-                    <h2>Hand Sign Prediction</h2>
+                <!-- Decorative HUD -->
+                <div class="camera-hud" aria-hidden="true">
+                    <span class="hud-corner top-left"></span>
+                    <span class="hud-corner top-right"></span>
+                    <span class="hud-corner bottom-left"></span>
+                    <span class="hud-corner bottom-right"></span>
+                </div>
+
+                <div class="camera-overlay">
+                    <div class="hud-label">
+                        <span class="hud-square"></span>
+                        <span>VISUAL ANALYSIS</span>
+                    </div>
+
+                    <div class="hud-readout">
+                        <span>TRACKING</span>
+                        <strong id="hud-tracking">STANDBY</strong>
+                    </div>
+                </div>
+
+                <div class="camera-center-message" id="camera-message">
+                    <div class="camera-message-icon">
+                        <span></span>
+                    </div>
+                    <strong>Initializing camera</strong>
+                    <p>Preparing hand recognition system...</p>
+                </div>
+
+                <div class="camera-bottom-overlay">
+                    <span id="hand-count">0 HANDS DETECTED</span>
+                    <span class="hud-separator"></span>
+                    <span id="fps-counter">-- FPS</span>
                 </div>
             </div>
 
-            <div class="prediction-card">
-                <span class="prediction-label">Predicted Sign</span>
-                <h3 id="prediction">Waiting...</h3>
+            <div class="camera-footer">
+                <div class="camera-status-copy">
+                    <span class="status-pulse"></span>
+                    <span id="status" role="status" aria-live="polite">
+                        Initializing hand tracking...
+                    </span>
+                </div>
 
-                <div class="prediction-confidence">
-                    <span>Confidence</span>
+                <span class="camera-resolution" id="camera-resolution">
+                    1280 × 720
+                </span>
+            </div>
+        </section>
+
+        <!-- Prediction dashboard -->
+        <section class="prediction-section">
+
+            <div class="section-header">
+                <div class="section-title">
+                    <span class="section-index">02</span>
+                    <div>
+                        <h2>Hand Sign Analysis</h2>
+                        <p>Machine learning inference</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Main prediction -->
+            <article class="prediction-card" id="prediction-card">
+                <div class="prediction-card-top">
+                    <span class="prediction-label">CURRENT PREDICTION</span>
+                    <span class="prediction-indicator">
+                        <span></span>
+                        LIVE
+                    </span>
+                </div>
+
+                <div class="prediction-main">
+                    <div class="prediction-symbol" aria-hidden="true">
+                        <svg viewBox="0 0 48 48" fill="none">
+                            <path d="M14 24V13a3 3 0 0 1 6 0v9-13a3 3 0 0 1 6 0v13-10a3 3 0 0 1 6 0v12-7a3 3 0 0 1 6 0v13c0 8-5 13-13 13h-2c-5 0-8-3-11-7l-5-7a3.5 3.5 0 0 1 5-5l2 2Z"
+                                  stroke="currentColor"
+                                  stroke-width="2"
+                                  stroke-linecap="round"
+                                  stroke-linejoin="round"/>
+                        </svg>
+                    </div>
+
+                    <div class="prediction-copy">
+                        <span class="prediction-overline">RECOGNIZED SIGN</span>
+                        <h3 id="prediction">Waiting...</h3>
+                        <p id="prediction-description">
+                            Perform a hand sign to begin analysis.
+                        </p>
+                    </div>
+                </div>
+
+                <div class="prediction-divider"></div>
+
+                <div class="confidence-heading">
+                    <div>
+                        <span class="metric-label">Prediction confidence</span>
+                        <p>Model probability for the leading sign</p>
+                    </div>
+
                     <strong id="prediction-confidence">0%</strong>
                 </div>
 
@@ -57,29 +166,53 @@
                         style="width: 0%">
                     </div>
                 </div>
-            </div>
 
-            <div class="probabilities-card">
+                <div class="confidence-scale">
+                    <span>0%</span>
+                    <span>50%</span>
+                    <span>100%</span>
+                </div>
+            </article>
+
+            <!-- Ranked predictions -->
+            <article class="probabilities-card">
                 <div class="card-header">
                     <div>
-                        <h3>Probabilities</h3>
-                        <p>Model confidence for each hand sign</p>
+                        <h3>Top Predictions</h3>
+                        <p>Ranked by model probability</p>
+                    </div>
+
+                    <span class="ranking-badge">TOP 5</span>
+                </div>
+
+                <div id="probability-list" aria-live="polite">
+                    <div class="empty-predictions">
+                        <span class="empty-prediction-line"></span>
+                        <p>Waiting for model output...</p>
                     </div>
                 </div>
 
-                <div id="probability-list">
-                    <div class="probability-row">
-                        <div class="probability-info">
-                            <span class="sign-name">Unknown</span>
-                            <span class="sign-probability">0%</span>
-                        </div>
+                <div class="probabilities-footer">
+                    <span class="legend-dot"></span>
+                    <span>Higher probability indicates a stronger model match</span>
+                </div>
+            </article>
 
-                        <div class="probability-bar">
-                            <div
-                                class="probability-fill"
-                                style="width: 0%">
-                            </div>
-                        </div>
+            <!-- System information -->
+            <div class="system-info">
+                <div class="system-info-item">
+                    <span class="system-info-icon">01</span>
+                    <div>
+                        <span>LANDMARK ENGINE</span>
+                        <strong id="landmark-status">INITIALIZING</strong>
+                    </div>
+                </div>
+
+                <div class="system-info-item">
+                    <span class="system-info-icon">02</span>
+                    <div>
+                        <span>PREDICTION ENGINE</span>
+                        <strong id="prediction-engine-status">STANDBY</strong>
                     </div>
                 </div>
             </div>
@@ -87,9 +220,14 @@
     </main>
 
     <footer class="app-footer">
-        <span>Naruto Hand Sign Recognition</span>
-        <span>MediaPipe + Machine Learning </span>
+        <div class="footer-brand">
+            <span class="footer-mark">N</span>
+            <span>NARUTO HAND SIGN RECOGNITION</span>
+        </div>
+
+        <span class="footer-tech">MEDIAPIPE <span>+</span> MACHINE LEARNING</span>
     </footer>
+
     <script type="module" src="js/camera-test.js"></script>
 </body>
 </html>

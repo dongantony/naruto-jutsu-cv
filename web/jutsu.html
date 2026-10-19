@@ -4,32 +4,95 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Jutsu Mode</title>
+
+    <link rel="stylesheet" href="css/common.css">
     <link rel="stylesheet" href="css/jutsu.css">
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- MediaPipe -->
+    <script src="https://cdn.jsdelivr.net/npm/@mediapipe/selfie_segmentation/selfie_segmentation.js"></script>
 </head>
 <body>
     <header class="app-header">
-        <div>
-            <h1>Jutsu Mode</h1>
-            <p>Weave hand signs to perform a jutsu.</p>
+        <div class="brand">
+            <div class="brand-icon">
+                <span>꩜</span>
+            </div>
+
+            <div class="brand-copy">
+                <h1>Jutsu Mode</h1>
+            </div>
         </div>
     </header>
 
     <main class="jutsu-container">
         <section class="camera-section">
-            <h2>Weave Hand Signs</h2>
+            <div class="camera-heading">
+                <div>
+                    <h2>Weave Hand Signs</h2>
+                    <p>Follow the sequence to activate your jutsu.</p>
+                </div>
+
+                <div class="camera-label">
+                    <span class="camera-label-dot"></span>
+                    CAMERA FEED
+                </div>
+            </div>
 
             <div class="camera-container">
                 <video id="webcam" autoplay playsinline muted></video>
                 <canvas id="output"></canvas>
+                <canvas id="fireball-overlay"></canvas>
+
+                <div class="camera-frame" aria-hidden="true"></div>
+            </div>
+
+            <div class="camera-footer">
+                <div class="camera-tip">
+                    <span class="camera-tip-icon">✦</span>
+                    Keep your hands visible inside the frame.
+                </div>
+
+                <span>HAND TRACKING · JUTSU RECOGNITION</span>
             </div>
         </section>
 
-        <section class="jutsu-result">
-            <span class="result-label">Current Jutsu</span>
-            <h2 id="jutsu-name">Waiting...</h2>
+        <div class="jutsu-sidebar">
+            <section class="jutsu-panel">
 
-            <p id="jutsu-description">Perform a sequence of hand signs to activate a jutsu.</p>
-        </section>
+                <div class="jutsu-panel-header">
+                    <p class="panel-eyebrow">Jutsu Configuration</p>
+
+                    <label for="jutsu-select">Choose a Jutsu</label>
+
+                    <select id="jutsu-select">
+                        <option value="">Select a jutsu...</option>
+                    </select>
+                </div>
+
+                <div class="jutsu-details">
+                    <h2 id="selected-jutsu-name">Choose a Jutsu</h2>
+                    <p id="selected-jutsu-description">
+                        Select a jutsu to see the required hand signs.
+                    </p>
+
+                    <div class="sign-progress">
+                        <span id="sign-progress">0 / 0 signs completed</span>
+                    </div>
+
+                    <div id="jutsu-signs" class="jutsu-signs"></div>
+                </div>
+
+                <div class="current-jutsu">
+                    <span class="result-label">Current Jutsu</span>
+                    <h2 id="jutsu-name">Waiting...</h2>
+                </div>
+
+            </section>
+        </div>
     </main>
 
     <footer class="app-footer">

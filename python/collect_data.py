@@ -13,7 +13,7 @@ from mediapipe.tasks.python import vision
 
 # Settings
 
-DATASET_DIR = "../dataset-test"
+DATASET_DIR = "../dataset"
 MODEL_PATH = "../hand_landmarker.task"
 
 CAMERA_WIDTH = 1280
