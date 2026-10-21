@@ -152,6 +152,24 @@
     z-index: 2;
 }
 
+#chidori-overlay {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 5;
+}
+
+#rasengan-overlay {
+    position: absolute;
+    inset: 0;
+    z-index: 6;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
 .camera-frame {
     position: absolute;
     z-index: 3;
@@ -302,7 +320,8 @@
 
 .jutsu-signs {
     display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
+    grid-template-columns: minmax(0, 220px);
+    justify-content: center;
     align-items: stretch;
     gap: 12px;
     width: 100%;

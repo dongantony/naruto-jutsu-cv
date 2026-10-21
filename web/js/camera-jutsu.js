@@ -42,6 +42,27 @@ import {
 } from "./jutsu/effectClone.js"
 
 import {
+    initializeSubstitutionOverlay,
+    triggerSubstitution,
+    isSubstitutionActive,
+    drawSubstitution
+} from "./jutsu/effectSubstitution.js"
+
+import {
+    initializeChidoriOverlay,
+    triggerChidori,
+    updateChidoriHand,
+    isChidoriActive
+} from "./jutsu/effectChidori.js"
+
+import {
+    initializeRasenganOverlay,
+    triggerRasengan,
+    updateRasenganHand,
+    isRasenganActive
+} from "./jutsu/effectRasengan.js"
+
+import {
     FilesetResolver,
     HandLandmarker
 } from "https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@latest/vision_bundle.mjs"
@@ -75,11 +96,15 @@ const SIGN_IMAGES = {
     Ram: "/web/images/signs/Ram.png",
     Rat: "/web/images/signs/Rat.png",
     Snake: "/web/images/signs/Snake.png",
-    Tiger: "/web/images/signs/Tiger.png"
+    Tiger: "/web/images/signs/Tiger.png",
+    ShadowClone: "/web/images/signs/ShadowClone.png",
+    Rasengan: "/web/images/jutsus/rasengan.png"
 }
 
 // Jutsu Overlays
 const fireballCanvas = document.getElementById("fireball-overlay")
+const chidoriCanvas = document.getElementById("chidori-overlay")
+const rasenganCanvas = document.getElementById("rasengan-overlay")
 
 const reaperBackground = new Image()
 reaperBackground.src = "/web/images/jutsus/shinigami.png"
@@ -198,6 +223,13 @@ function onResults(results) {
 
     let visibleHands = 0
 
+    if(isChidoriActive() && detectedHands.length > 0) {
+        updateChidoriHand(detectedHands[0].landmarks)
+    }
+    if (isRasenganActive() && detectedHands.length > 0) {
+        updateRasenganHand(detectedHands[0].landmarks)
+    }
+
     for(let i = 0; i < handSlots.length; i++) {
         const slot = handSlots[i]
 
@@ -251,11 +283,20 @@ function onResults(results) {
                     if(activatedJutsu.id === "fireball-jutsu") {
                         triggerFireball(detectedHands[0]?.landmarks)
                     }
+                    if (activatedJutsu.id === "lightning-blade") {
+                        triggerChidori(detectedHands[0]?.landmarks, activatedJutsu.maxDuration)
+                    }
+                    if (activatedJutsu.id === "spiral-sphere") {
+                        triggerRasengan(detectedHands[0]?.landmarks, activatedJutsu.maxDuration)
+                    }
                     if(activatedJutsu.id === "reaper-death-seal") {
                         triggerReaperSeal(activatedJutsu.maxDuration)
                     }
                     if(activatedJutsu.id === "shadow-clone-jutsu") {
                         triggerShadowClone(activatedJutsu.maxDuration)
+                    }
+                    if(activatedJutsu.id === "body-replacement") {
+                        triggerSubstitution(activatedJutsu.maxDuration)
                     }
                 }
             }
@@ -266,6 +307,9 @@ function onResults(results) {
         .finally(() => {
             predictionInProgress = false
         })
+    }
+    else if(detectedHands.length === 0) {
+        processJutsuPrediction(null)
     }
 }
 
@@ -301,7 +345,7 @@ function selectJutsu(jutsuID) {
     }
 
     selectedJutsuName.textContent = selectedJutsu.name
-    selectedJutsuDescription.textContent = `Element: ${selectedJutsu.type}`
+    selectedJutsuDescription.textContent = ``
 
     renderJutsuSigns([])
 }
@@ -433,7 +477,7 @@ function drawSegmentedFrame(results) {
         personCanvas.height = height
     }
 
-    // 1. Extract the person using the segmentation mask.
+    // Extract the person using the segmentation mask.
     personCtx.clearRect(0, 0, width, height)
     personCtx.drawImage(results.image, 0, 0, width, height)
 
@@ -446,7 +490,9 @@ function drawSegmentedFrame(results) {
     personCtx.globalCompositeOperation = "source-over"
     personCtx.filter = "none"
 
-    // 2. Shadow Clone mode.
+    ctx.clearRect(0, 0, width, height)
+
+    // Shadow Clone mode.
     if(isShadowCloneActive()) {
         ctx.clearRect(0, 0, width, height)
         ctx.drawImage(results.image, 0, 0, width, height)
@@ -456,14 +502,22 @@ function drawSegmentedFrame(results) {
         return
     }
 
-    // 3. Normal camera mode.
+    // Substitution Jutsu mode.
+    if(isSubstitutionActive()) {
+        ctx.clearRect(0, 0, width, height)
+        drawSubstitution(ctx, width, height)
+
+        return
+    }
+
+    // Normal camera mode.
     if(!isReaperSealActive()) {
         ctx.clearRect(0, 0, width, height)
         ctx.drawImage(results.image, 0, 0, width, height)
         return
     }
 
-    // 4. Reaper Seal mode.
+    // Reaper Seal mode.
     if(!reaperBackground.complete || !reaperBackground.naturalWidth) {
         ctx.clearRect(0, 0, width, height)
         ctx.drawImage(results.image, 0, 0, width, height)
@@ -501,8 +555,11 @@ async function startCamera() {
         await video.play()
 
         initializeFireballOverlay(video, fireballCanvas)
+        initializeChidoriOverlay(video, chidoriCanvas)
+        initializeRasenganOverlay(video, rasenganCanvas)
         initializeReaperSeal()
         initializeCloneOverlay(personCanvas)
+        initializeSubstitutionOverlay(personCanvas)
 
         console.log("Camera started:", video.videoWidth, "x", video.videoHeight)
         

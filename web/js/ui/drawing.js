@@ -146,30 +146,3 @@ export function drawHand(ctx, canvas, slot, slotIndex) {
     drawFingerInfo(ctx, slot, x, y)
     drawPalmInfo(ctx, slot, x, y)
 }
-
-export function drawTwoHandInfo(ctx, relationship) {
-    if(!relationship.available) return
-
-    let y = 30
-
-    let text = `Wrist: ${relationship.wristDistance.toFixed(3)}`
-    drawMirroredText(ctx, text, 10, y, "bold 18px Arial", "#FFFF00") 
-
-    y += 22
-    text = `Palm: ${relationship.palmDistance.toFixed(3)}`
-    drawMirroredText(ctx, text, 10, y, "bold 18px Arial", "#FFFF00") 
-
-    y += 22
-    text = `Palm Angle: ${relationship.palmAngle.toFixed(1)}°`
-    drawMirroredText(ctx, text, 10, y, "bold 18px Arial", "#FFFF00") 
-
-
-    y += 22
-    text = relationship.touching 
-            ? "Hands: TOUCHING"
-            : relationship.interacting
-            ? "Hands: INTERACTING"
-            : "Hands: SEPARATED"
-    
-    drawMirroredText(ctx, text, 10, y, "bold 18px Arial", "#FFFF00")        
-}

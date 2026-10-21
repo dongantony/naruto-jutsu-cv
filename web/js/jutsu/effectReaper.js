@@ -1,9 +1,18 @@
+// effectReaper.js
+
+// Track active and timeout state
 let reaperActive = false
 let reaperTimeout = null
+
+
+// Initialize the Reaper Seal overlay.
 
 export function initializeReaperSeal() {
     stopReaperSeal()
 }
+
+
+// Trigger, Check, and Stop Reaper Seal 
 
 export function triggerReaperSeal(duration = 10000) {
     if(reaperTimeout !== null) {

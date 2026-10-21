@@ -37,6 +37,7 @@ class JutsuDetector {
         if(!prediction) {
             this.currentPrediction = null
             this.predictionSince = null
+            this.lastAcceptedSign = null
 
             return this.getState()
         }

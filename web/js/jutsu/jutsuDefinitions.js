@@ -11,7 +11,6 @@ export const JUTSUS = [
     {
         id: "fireball-jutsu",
         name:  "Fire Style: Fireball Jutsu",
-        type: "Fire",
         signs: [
             "Snake",
             "Ram",
@@ -25,7 +24,6 @@ export const JUTSUS = [
     {
         id: "reaper-death-seal",
         name: "Dead Demon Consuming Seal",
-        type: "Sealing",
         signs: [
             "Snake",
             "Boar",
@@ -42,10 +40,29 @@ export const JUTSUS = [
     {
         id: "shadow-clone-jutsu",
         name: "Multi-Shadow Clone Jutsu",
-        type: "Shadow Clone",
+        signs: ["ShadowClone"],
+        maxDuration: 5000
+    },
+    {
+        id: "body-replacement",
+        name: "Substitution Jutsu",
+        signs: ["Rat"],
+        maxDuration: 5000
+    },
+    {
+        id: "lightning-blade",
+        name: "Lightning Release: Chidori",
         signs: [
-            "ShadowClone"
+            "Ox",
+            "Hare",
+            "Monkey"
         ],
+        maxDuration: 10000
+    },
+    {
+        id: "spiral-sphere",
+        name: "Rasengan",
+        signs: ["Rasengan"],
         maxDuration: 10000
     }
 ]

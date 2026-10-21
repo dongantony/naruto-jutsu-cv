@@ -8,13 +8,8 @@ import {
 } from "./tracking/handTracker.js"
 
 import {
-    drawHand,
-    drawTwoHandInfo
+    drawHand
 } from "./ui/drawing.js"
-
-import {
-    getHandRelationship
-} from "./tracking/handRelationship.js"
 
 import {
     extractHandFeatures
@@ -174,14 +169,6 @@ function onResults(results) {
         visibleHands++
 
         drawHand(ctx, canvas, slot, i)
-    }
-
-    // Two-Hand Relationship
-    const { left, right } = getVisibleHands()
-    const relationship = getHandRelationship(left, right)
-    
-    if(relationship.available) {
-        drawTwoHandInfo(ctx, relationship)
     }
 
     // Machine Learning Prediction
